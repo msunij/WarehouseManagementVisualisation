@@ -136,13 +136,18 @@ def mainFromExcel():
     allWarehouse(warehouse)
 
 def main():
-	res = input("How do you want to proceed?\n
-			1. From and excel file\n
-		  	2. Manual input of Product Code[A - Y] and\n
-				delivery location[0-3]")
-	if res == '1':
-		mainLooped()
-	else:
-		mainFromExcel()
+    res = input("""How do you want to proceed?\n
+                1. From and excel file\n
+                2. Manual input of Product Code[A - Y] and\n
+                    delivery location[0-3]\n
+                3. Quit: """)
+	
+    if res == '2':
+        mainLooped()
+    elif res == '1':
+        mainFromExcel()
+    else:
+        quit()
+    
 
 main()
