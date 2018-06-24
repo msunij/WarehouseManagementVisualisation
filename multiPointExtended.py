@@ -7,9 +7,10 @@ Created on Fri Jun 22 20:35:50 2018
 """
 
 import string
-from pandas import read_excel
 
 #Utility Functions
+
+#this function needs to be edited
 def distanceMatrix():
     for letter in string.ascii_uppercase[:9]:
         print(letter,end=" :")
@@ -17,15 +18,15 @@ def distanceMatrix():
             print(robotList[i].distanceDict[letter],end=",")
         print(" ")
 
+#find the current positions of the robots 
 def robotsPositions():
     for rob in robotList:
         print(rob.name, rob.pos)
         
         
 robotSpeed = 1.5
+
 #initializing the warehouse data point
-
-
 warehouse = {}
 sideage = 3
 rows = 5
@@ -55,7 +56,9 @@ class robot:
         self.pos = pointLocations[robotNumber] #Assigning corresponding robot to points
         self.avail = True
         self.name = 'Robot'+str(robotNumber+1)
-        
+    
+    #find the total distance robot has to travel to deliver the product
+    #argument is a list of product code and delivery location
     def distanceCalculator(self,item):
         dist2item = (abs(self.pos[0]-warehouse[item[0]][0])
                     +abs(self.pos[1]-warehouse[item[0]][1]))
@@ -132,4 +135,14 @@ def mainFromExcel():
     warehouse = readExcel()
     allWarehouse(warehouse)
 
-mainFromExcel()
+def main():
+	res = input("How do you want to proceed?\n
+			1. From and excel file\n
+		  	2. Manual input of Product Code[A - Y] and\n
+				delivery location[0-3]")
+	if res == '1':
+		mainLooped()
+	else:
+		mainFromExcel()
+
+main()
