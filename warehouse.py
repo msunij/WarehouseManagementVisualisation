@@ -89,14 +89,14 @@ def closestRobotFinder(item):
         
     robot2use = robotList[closestIndex]
     robot2use.pos = pointLocations[item[1]]
-    return [robot2use.name, closestDist]
+    return [robot2use, item, closestDist]
 
 def closestRobotFinderPrint(item):
-    robotNumber, timeTaken = closestRobotFinder(item)
+    robot, item, dist = closestRobotFinder(item)
     print("Product Retrieved: {}".format(item[0]))
-    print("Robot Engaged: {}".format(robotNumber))
-    print("Distance Covered: {}meters".format(timeTaken))
-    print("Time Taken: {}seconds".format(timeTaken*robotSpeed))
+    print("Robot Engaged: {}".format(robot.name))
+    print("Distance Covered: {}meters".format(dist))
+    print("Time Taken: {}seconds".format(dist/robotSpeed))
     print("*********************************")
 	  
 def mainHardCoded():
@@ -153,6 +153,6 @@ def main():
         exit()
     
 if __name__ == '__main__':
-    #mainHardCoded()
+    mainHardCoded()
     #mainFromExcel()
-    main()
+    #main()
