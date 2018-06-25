@@ -49,11 +49,23 @@ for key,value in warehouse.warehouse.items():
     a,b,c,d = rectBound(scale(value[0]),scale(value[1]),radiusItem)
     canvas.create_rectangle(a,b,c,d,fill='yellow')
     
-#New RobotMotion class inherited from Robot class
-class RobotMotion(warehouse.Robot):
-    def __init__(self,robotNumber):
-        super().__init__(self,robotNumber)
-        
+#draw robot
+for rob in warehouse.robotList:
+    x,y = rob.pos
+    a,b,c,d = rectBound(scale(x),scale(y),radiusRobot)
+    canvas.create_rectangle(a,b,c,d,fill='black')
+    
+##New RobotMotion class inherited from Robot class
+#class RobotMotion(warehouse.Robot):
+#    def __init__(self,robotNumber):
+#        super().__init__(self,robotNumber)
+
+item2retrive = ['E', 0]
+
+robot2use, item, closestDist = warehouse.closestRobotFinder(item2retrive)
+itemPos = warehouse.warehouse[item2retrive[0]]
+finalPos = robot2use.pos
+
     
 
     
