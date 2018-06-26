@@ -55,16 +55,10 @@ for rob in warehouse.robotList:
     a,b,c,d = rectBound(scale(x),scale(y),radiusRobot)
     canvas.create_rectangle(a,b,c,d,fill='black')
     
-##New RobotMotion class inherited from Robot class
-#class RobotMotion(warehouse.Robot):
-#    def __init__(self,robotNumber):
-#        super().__init__(self,robotNumber)
-
-item2retrive = ['E', 0]
-
-robot2use, item, closestDist = warehouse.closestRobotFinder(item2retrive)
-itemPos = warehouse.warehouse[item2retrive[0]]
-finalPos = robot2use.pos
+#tkinter class for shapes and its motion
+class Shape:
+    def __init__(self, master):
+        
 
     
 

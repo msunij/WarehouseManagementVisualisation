@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Jun 22 20:35:50 2018
+Created on Fri Jun 20 20:35:50 2018
 
-@author: msunij
+@author: amal
 
 """
 
 import string
+import openpyxl
+
 
 
 #Utility Functions
@@ -72,7 +74,26 @@ robotCount = 3
 
 robotList = [ Robot(i) for i in range(robotCount)]
 
-def allWarehouse(inputDict):
+def toExcel(inputDict):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws['A1'] = 'Sl No.'
+    ws['B1'] = 'ProductCode'
+    ws['C1'] = 'RobotEngaged'
+    ws['D1'] = 'TimeTaken'
+    ws['E1'] = 'DistanceCovered'
+    i = 2
+    for key, value in inputDict.items():  
+        robotSelected, item, dist = closestRobotFinder([key, value[2]])
+        ws.cell(row=i,column=1).value = i-1
+        ws.cell(row=i,column=2).value = key
+        ws.cell(row=i,column=3).value = robotSelected.name
+        ws.cell(row=i,column=4).value = round(dist/robotSpeed,2)
+        ws.cell(row=i,column=5).value = dist
+        i += 1
+    wb.save('output.xlsx')
+    
+def printAll(inputDict):
     for key, value in inputDict.items():
         
         closestRobotFinderPrint([key, value[2]])
@@ -96,8 +117,9 @@ def closestRobotFinderPrint(item):
     print("Product Retrieved: {}".format(item[0]))
     print("Robot Engaged: {}".format(robot.name))
     print("Distance Covered: {}meters".format(dist))
-    print("Time Taken: {}seconds".format(dist/robotSpeed))
+    print("Time Taken: {}seconds".format(round(dist/robotSpeed,2)))
     print("*********************************")
+        
 	  
 def mainHardCoded():
     item2retrive = ['E', 0]
@@ -118,7 +140,6 @@ def mainLooped():
         
 def readExcel():
     
-    import openpyxl
     from collections import OrderedDict
     
     warehouse = OrderedDict()
@@ -134,13 +155,15 @@ def readExcel():
     return warehouse
     
         
-def mainFromExcel():
+def mainExcel():
     warehouse = readExcel()
-    allWarehouse(warehouse)
+    toExcel(warehouse)
+    printAll(warehouse)
+    
 
 def main():
     res = input("""How do you want to proceed?\n
-                1. From and excel file\n
+                1. From an excel file\n
                 2. Manual input of Product Code[A - Y] and\n
                     delivery location[0-3]\n
                 3. Quit: """)
@@ -148,11 +171,11 @@ def main():
     if res == '2':
         mainLooped()
     elif res == '1':
-        mainFromExcel()
+        mainExcel()
     else:
         exit()
     
 if __name__ == '__main__':
-    mainHardCoded()
-    #mainFromExcel()
-    #main()
+    #mainHardCoded()
+    #mainExcel()
+    main()
