@@ -2,7 +2,7 @@
 """
 Created on Mon Jun 25 20:32:44 2018
 
-@author: Amal
+@author: msunij
 """
 
 # Tkinter animate via canvas.move(obj, xAmount, yAmount)

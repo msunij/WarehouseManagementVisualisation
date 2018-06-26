@@ -2,12 +2,13 @@
 """
 Created on Fri Jun 20 20:35:50 2018
 
-@author: amal
+@author: msunij
 
 """
 
 import string
 import openpyxl
+from math import hypot
 
 
 
@@ -26,6 +27,13 @@ def robotsPositions():
     for rob in robotList:
         print(rob.name, rob.pos)
         
+#to calculate the distance between two points
+def distance(pos1, pos2):
+    dist = abs(pos1[0]-pos2[0])+abs(pos1[1]-pos2[1])
+    return dist
+
+def displacement(pos1, pos2):
+    return hypot(pos1[0]-pos2[1],pos1[1]-pos2[1])
         
 robotSpeed = 1.5
 
@@ -62,14 +70,14 @@ class Robot:
     
     #find the total distance robot has to travel to deliver the product
     #argument is a list of product code and delivery location
-    def distanceCalculator(self,item):
-        dist2item = (abs(self.pos[0]-warehouse[item[0]][0])
-                    +abs(self.pos[1]-warehouse[item[0]][1]))
-        dist2exit = (abs(pointLocations[item[1]][0]-warehouse[item[0]][0])
-                    +abs(pointLocations[item[1]][1]-warehouse[item[0]][1]))
-        distance = dist2item+dist2exit
-        return distance
+    def dist2item(self,itemCode):
+        return distance(self.pos, warehouse[itemCode])
+    
+    def dist2exit(self,itemCode,deliveryPoint):
+        return distance(warehouse[itemCode],pointLocations[deliveryPoint])
 
+    def distanceCalculator(self,itemCode,deliveryPoint):
+        return self.dist2item(itemCode) + self.dist2exit(itemCode,deliveryPoint)
 robotCount = 3
 
 robotList = [ Robot(i) for i in range(robotCount)]
@@ -84,10 +92,10 @@ def toExcel(inputDict):
     ws['E1'] = 'DistanceCovered'
     i = 2
     for key, value in inputDict.items():  
-        robotSelected, item, dist = closestRobotFinder([key, value[2]])
+        robotIndex, itemDetail, dist = closestRobotFinder(key, value[1])
         ws.cell(row=i,column=1).value = i-1
         ws.cell(row=i,column=2).value = key
-        ws.cell(row=i,column=3).value = robotSelected.name
+        ws.cell(row=i,column=3).value = robotList[robotIndex].name
         ws.cell(row=i,column=4).value = round(dist/robotSpeed,2)
         ws.cell(row=i,column=5).value = dist
         i += 1
@@ -96,34 +104,35 @@ def toExcel(inputDict):
 def printAll(inputDict):
     for key, value in inputDict.items():
         
-        closestRobotFinderPrint([key, value[2]])
+        closestRobotFinderPrint(key, value[1])
 
-def closestRobotFinder(item):
+def closestRobotFinder(itemCode,deliveryPoint):
     closestDist = 10000 #Maximum distance that is possible
     closestIndex = 0
     for i in range(robotCount):
         if robotList[i].avail:
-            dist = robotList[i].distanceCalculator(item)
+            dist = robotList[i].distanceCalculator(itemCode,deliveryPoint)
+            print(i,dist)
             if dist < closestDist:
                 closestDist = dist
                 closestIndex = i
-        
-    robot2use = robotList[closestIndex]
-    robot2use.pos = pointLocations[item[1]]
-    return [robot2use, item, closestDist]
+    print('selected:'+str(closestIndex))
+    item = [itemCode,deliveryPoint]
+    return [closestIndex, item, closestDist]
 
-def closestRobotFinderPrint(item):
-    robot, item, dist = closestRobotFinder(item)
+def closestRobotFinderPrint(itemCode,deliveryPoint):
+    robotIndex, itemDetail, dist = closestRobotFinder(itemCode,deliveryPoint)
     print("Product Retrieved: {}".format(item[0]))
-    print("Robot Engaged: {}".format(robot.name))
+    print("Robot Engaged: {}".format(robotList[robotIndex].name))
     print("Distance Covered: {}meters".format(dist))
     print("Time Taken: {}seconds".format(round(dist/robotSpeed,2)))
     print("*********************************")
         
 	  
 def mainHardCoded():
-    item2retrive = ['E', 0]
-    closestRobotFinderPrint(item2retrive)
+    itemCode = 'E'
+    deliveryPoint = 2
+    closestRobotFinderPrint(itemCode,deliveryPoint)
 
 def inputAsker():
     name = input('Item Code :')
@@ -143,7 +152,8 @@ def readExcel():
     from collections import OrderedDict
     
     warehouse = OrderedDict()
-    fileName = input("Enter the name of the excel file: ")
+    #fileName = input("Enter the name of the excel file: ")
+    fileName = 'warehouse.xlsx'
     workbook = openpyxl.load_workbook(fileName, data_only=True)
     sheet = workbook.active
     for i in range(2,sheet.max_row+1):
@@ -151,7 +161,7 @@ def readExcel():
         x = sheet.cell(row=i, column=2).value
         y = sheet.cell(row=i, column=3).value
         pt = sheet.cell(row=i, column=4).value
-        warehouse.update({code:[x,y,pt]})
+        warehouse.update({code:[[x,y],pt]})
     return warehouse
     
         

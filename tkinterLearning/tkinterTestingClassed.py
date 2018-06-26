@@ -10,37 +10,42 @@ Created on Mon Jun 25 01:53:56 2018
 from tkinter import *
 import time
 
-class alien():
-     def __init__(self, master):
-        self.canvas = Canvas(master, width=400, height = 400)
-        self.alien1 = self.canvas.create_oval(20, 260, 120, 360, outline='white',         fill='blue')
-        self.alien2 = self.canvas.create_oval(2, 2, 40, 40, outline='white', fill='red')
-        self.canvas.pack()
-     def animation(self):
-        track = 0
+class Parent():
+    def __init__(self,a,b,c,d,clr):
+        self.x1 = a
+        self.y1 = b
+        self.x2 = c
+        self.y2 = d
+        self.colour = clr
+
+class alien(Parent):
+    def __init__(self, canvas,a,b,c,d,clr):
+        super().__init__(a,b,c,d,clr)
+        self.canvas = canvas
+        self.alien1 = self.canvas.create_oval(self.x1,self.y1,self.x2,self.y2,fill=self.colour)
+    def animationRight(self):
         while True:
             x = 5
             y = 0
-            if track == 0:
-               for i in range(0,51):
-                    time.sleep(0.025)
-                    self.canvas.move(self.alien1, x, y)
-                    self.canvas.move(self.alien2, x, y)
-                    self.canvas.update()
-               track = 1
-               print("check")
+            for i in range(0,20):
+                time.sleep(0.05)
+                self.canvas.move(self.alien1, x, y)
+                self.canvas.update()
+            break
+                
+    def animationLeft(self):
+        while True:
+            x = 5
+            y = 0
+            for i in range(0,51):
+                time.sleep(0.025)
+                self.canvas.move(self.alien1, -x, y)
+                self.canvas.update()
 
-            else:
-               for i in range(0,51):
-                    time.sleep(0.025)
-                    self.canvas.move(self.alien1, -x, y)
-                    self.canvas.move(self.alien2, -x, y)
-                    self.canvas.update()
-               track = 0
-            print(track)
 
 root = Tk()
-
-b = alien(root)
-b.animation()
+canvas = Canvas(width=400,height=400)
+canvas.pack()
+b = alien(canvas,200,200,250,250,'red')
+b.animationRight()
 root.mainloop()
