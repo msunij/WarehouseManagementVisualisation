@@ -112,11 +112,9 @@ def closestRobotFinder(itemCode,deliveryPoint):
     for i in range(robotCount):
         if robotList[i].avail:
             dist = robotList[i].distanceCalculator(itemCode,deliveryPoint)
-            print(i,dist)
             if dist < closestDist:
                 closestDist = dist
                 closestIndex = i
-    print('selected:'+str(closestIndex))
     item = [itemCode,deliveryPoint]
     return [closestIndex, item, closestDist]
 

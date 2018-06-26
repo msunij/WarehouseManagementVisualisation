@@ -42,17 +42,24 @@ Y2 = scale(10)
 
 floor = canvas.create_rectangle(X1,Y1,X2,Y2,fill="lightblue")
 
-
-
+#Blink green for 1 sec
+def blink(loc):
+    a,b,c,d = rectBound(loc,radiusItem)
+    canvas.create_rectangle(a,b,c,d,fill='green')
+    time.sleep(0.2)
+    
 #draw delivery points
 for pt in warehouse.pointLocations:
     a,b,c,d = rectBound(scale(pt),radiusPt)
     canvas.create_rectangle(a,b,c,d,fill="red")
-    
+
 #draw product locations
-for key,value in warehouse.warehouse.items():
-    a,b,c,d = rectBound(scale(value),radiusItem)
+database = warehouse.readExcel()
+
+for key,value in database.items():
+    a,b,c,d = rectBound(scale(value[0]),radiusItem)
     canvas.create_rectangle(a,b,c,d,fill='yellow')
+    canvas.create_text(scale(value[0][0]),scale(value[0][1]),text=key)
     
 ##draw robot
 #for rob in warehouse.robotList:
@@ -72,6 +79,7 @@ class RobotMotion(warehouse.Robot):
         itemPt = scale(database[itemDetail[0]][0])
         exitPt = scale(warehouse.pointLocations[itemDetail[1]])
         self.move2location(itemPt)
+        blink(itemPt)
         self.move2location(exitPt)
         
         
@@ -102,7 +110,6 @@ for i in range(robotCount):
                          name=robotList[i].name+'thread',\
                          args=())
 
-database = warehouse.readExcel()
 for key, value in database.items():
     robotIndex, itemDetail, dist = warehouse.closestRobotFinder(key,value[1])
     robotList[robotIndex].move2exit(itemDetail)
