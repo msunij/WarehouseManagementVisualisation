@@ -5,6 +5,7 @@ Created on Mon Jun 25 00:22:09 2018
 @author: msunij
 """
 import warehouse
+from warehouse import itemDict,pointLocations
 from tkinter import *
 import time
 import threading
@@ -24,8 +25,7 @@ def rectBound(pos, r):
     y2 = pos[1]+r
     return [x1,y1,x2,y2]
 
-    
-    
+   
 root = Tk()
 
 canvas = Canvas(root,width=600,height=600)
@@ -45,42 +45,52 @@ floor = canvas.create_rectangle(X1,Y1,X2,Y2,fill="lightblue")
 #Blink green for 1 sec
 def blink(loc):
     a,b,c,d = rectBound(loc,radiusItem)
-    canvas.create_rectangle(a,b,c,d,fill='green')
-    time.sleep(0.2)
+    grn = canvas.create_rectangle(a,b,c,d,fill='green')
+    time.sleep(.5)
+    #canvas.delete(grn)
     
 #draw delivery points
-for pt in warehouse.pointLocations:
-    a,b,c,d = rectBound(scale(pt),radiusPt)
+for pt in pointLocations:
+    a,b,c,d = rectBound(scale(pt.location),radiusPt)
     canvas.create_rectangle(a,b,c,d,fill="red")
 
 #draw product locations
-database = warehouse.readExcel()
-
-for key,value in database.items():
-    a,b,c,d = rectBound(scale(value[0]),radiusItem)
+for key in itemDict.keys():
+    loc = itemDict[key].location
+    a,b,c,d = rectBound(scale(loc),radiusItem)
     canvas.create_rectangle(a,b,c,d,fill='yellow')
-    canvas.create_text(scale(value[0][0]),scale(value[0][1]),text=key)
+    canvas.create_text(scale(loc[0]),scale(loc[1]),text=key)
     
-##draw robot
-#for rob in warehouse.robotList:
-#    a,b,c,d = rectBound(rob.pos,radiusRobot)
-#    canvas.create_rectangle(a,b,c,d,fill='black')
-    
-#tkinter class for shapes and its motion
+
+#tkinter robot class for shapes and its motion
 class RobotMotion(warehouse.Robot):
     def __init__(self, canvas,robotNumber):
         self.canvas = canvas
         super().__init__(robotNumber)
         self.pos = scale(self.pos)
         a,b,c,d = rectBound(self.pos,radiusRobot)
-        self.robotIcon = self.canvas.create_oval(a,b,c,d,fill='black')
+        self.robotIcon = self.canvas.create_oval(a,b,c,d,fill='black',tags=(self.name))
+        self.robotText = self.canvas.create_text(self.pos[0],self.pos[1],text=str(robotNumber+1),fill='white',tags=self.name)
         
-    def move2exit(self,itemDetail):
-        itemPt = scale(database[itemDetail[0]][0])
-        exitPt = scale(warehouse.pointLocations[itemDetail[1]])
-        self.move2location(itemPt)
-        blink(itemPt)
-        self.move2location(exitPt)
+    def deliverThread(self,itemCode):
+        print('threadstart{}{}'.format(self.name,itemCode))
+        threading.Thread(target=self.deliver,args=(itemCode))
+        
+    def deliver(self,itemCode):
+        print('inside')
+        if itemDict[itemCode].stock < 1:
+            print("Stock depleted")
+        else:
+            self.avail = False
+            itemLoc = scale(itemDict[itemCode].location)
+            exitPt = itemDict[itemCode].deliveryPt
+            deliveryLoc = pointLocations[exitPt].location
+            exitLoc = scale(deliveryLoc)
+            self.move2location(itemLoc)
+            blink(itemLoc)
+            itemDict[itemCode].removeStock()
+            self.move2location(exitLoc)
+            self.avail = True
         
         
     def move2location(self,location):
@@ -90,29 +100,20 @@ class RobotMotion(warehouse.Robot):
         y = (location[1]-self.pos[1])/duration
         for i in range(round(duration)):
             time.sleep(.005)
-            self.canvas.move(self.robotIcon,x,y)
+            self.canvas.move(self.name,x,y)
             self.canvas.update()
         self.pos = location
-        
-#class RobotThread(threading.Thread):
-#    def __init__(self,rob,itemDetail):
-#        self.rob = rob
-#    
-#    def run(self):
-#        self.rob.move2exit(itemDetail)
+
 
 robotCount = 3
-#robotList = [ RobotMotion(canvas,i) for i in range(robotCount)]
 robotList = []
 for i in range(robotCount):
     robotList.append(RobotMotion(canvas,i))
-    t = threading.Thread(target=robotList[i].move2exit,\
-                         name=robotList[i].name+'thread',\
-                         args=())
 
-for key, value in database.items():
-    robotIndex, itemDetail, dist = warehouse.closestRobotFinder(key,value[1])
-    robotList[robotIndex].move2exit(itemDetail)
+for key in itemDict.keys():
+    robotIndex, dist = warehouse.closestRobotFinder(key)
+    robotList[robotIndex].deliverThread(key)
+    time.sleep(.5)
 
 
 root.mainloop()
