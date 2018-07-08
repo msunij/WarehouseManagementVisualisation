@@ -6,30 +6,10 @@ Created on Mon Jun 25 00:22:09 2018
 """
 import warehouse
 from warehouse import itemDict,pointLocations
-from tkinter import *
-import time
+from utils import *
+import tkinter as tk
 import threading
 
-#scaling function
-def scale(num):
-    if type(num) == int:
-        return num*50+50
-    else:
-        return [scale(i) for i in num]
-    
-#Rectangular bounding box finder
-def rectBound(pos, r):
-    x1 = pos[0]-r
-    y1 = pos[1]-r
-    x2 = pos[0]+r
-    y2 = pos[1]+r
-    return [x1,y1,x2,y2]
-
-   
-root = Tk()
-
-canvas = Canvas(root,width=600,height=600)
-canvas.pack()
 
 radiusPt = 20
 radiusItem = 15
@@ -51,15 +31,15 @@ def blink(loc):
     
 #draw delivery points
 for pt in pointLocations:
-    a,b,c,d = rectBound(scale(pt.location),radiusPt)
+    a,b,c,d = rectBound(pt.location,radiusPt)
     canvas.create_rectangle(a,b,c,d,fill="red")
 
 #draw product locations
 for key in itemDict.keys():
     loc = itemDict[key].location
-    a,b,c,d = rectBound(scale(loc),radiusItem)
+    a,b,c,d = rectBound(loc,radiusItem)
     canvas.create_rectangle(a,b,c,d,fill='yellow')
-    canvas.create_text(scale(loc[0]),scale(loc[1]),text=key)
+    canvas.create_text(loc[0],loc[1],text=key)
     
 
 #tkinter robot class for shapes and its motion
@@ -67,25 +47,22 @@ class RobotMotion(warehouse.Robot):
     def __init__(self, canvas,robotNumber):
         self.canvas = canvas
         super().__init__(robotNumber)
-        self.pos = scale(self.pos)
+        self.pos = self.pos
         a,b,c,d = rectBound(self.pos,radiusRobot)
         self.robotIcon = self.canvas.create_oval(a,b,c,d,fill='black',tags=(self.name))
         self.robotText = self.canvas.create_text(self.pos[0],self.pos[1],text=str(robotNumber+1),fill='white',tags=self.name)
         
-    def deliverThread(self,itemCode):
-        print('threadstart{}{}'.format(self.name,itemCode))
-        threading.Thread(target=self.deliver,args=(itemCode))
+    
         
     def deliver(self,itemCode):
-        print('inside')
         if itemDict[itemCode].stock < 1:
             print("Stock depleted")
         else:
             self.avail = False
-            itemLoc = scale(itemDict[itemCode].location)
+            itemLoc = itemDict[itemCode].location
             exitPt = itemDict[itemCode].deliveryPt
             deliveryLoc = pointLocations[exitPt].location
-            exitLoc = scale(deliveryLoc)
+            exitLoc = deliveryLoc
             self.move2location(itemLoc)
             blink(itemLoc)
             itemDict[itemCode].removeStock()
@@ -112,8 +89,12 @@ for i in range(robotCount):
 
 for key in itemDict.keys():
     robotIndex, dist = warehouse.closestRobotFinder(key)
-    robotList[robotIndex].deliverThread(key)
+    robotList[robotIndex].deliver(key)
     time.sleep(.5)
 
 
+root = tk.Tk()
+
+canvas = tk.Canvas(root,width=600,height=600)
+canvas.pack()
 root.mainloop()

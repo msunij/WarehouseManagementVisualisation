@@ -7,34 +7,15 @@ Created on Fri Jun 20 20:35:50 2018
 """
 
 import openpyxl
-from math import hypot
+from utils import *
+import time
+import queue
+import threading
 
 
 
-#Utility Functions
-
-#this function needs to be edited
-def distanceMatrix():
-    for letter in string.ascii_uppercase[:9]:
-        print(letter,end=" :")
-        for i in range(3):
-            print(robotList[i].distanceDict[letter],end=",")
-        print(" ")
-
-#find the current positions of the robots 
-def robotsPositions():
-    for rob in robotList:
-        print(rob.name, rob.pos)
         
-#to calculate the distance between two points
-def distance(pos1, pos2):
-    dist = abs(pos1[0]-pos2[0])+abs(pos1[1]-pos2[1])
-    return dist
-
-def displacement(pos1, pos2):
-    return hypot(pos1[0]-pos2[1],pos1[1]-pos2[1])
-        
-robotSpeed = 1.5
+robotSpeed = 2
 
 #initializing the warehouse data point
 sideage = 3
@@ -57,7 +38,7 @@ class Item:
     def removeStock(self,quantity=1):
         self.stock -= quantity
 
-
+q = queue.Queue(maxsize=0)
 def readExcel():
         
     D = dict()
@@ -73,14 +54,15 @@ def readExcel():
         stock = sheet.cell(row=i, column=6).value
         deliveryPt = sheet.cell(row=i, column=7).value
         
-        D[code] = Item(name,[x,y],stock,deliveryPt)
+        D[code] = Item(name,scale([x,y]),stock,deliveryPt)
+        q.put(code)
     return D
     
   
 #initializing the entry and exit points
 class ExitPoint:
     def __init__(self,location):
-        self.location = location
+        self.location = scale(location)
         
         
 pointCount = 4
@@ -111,6 +93,30 @@ class Robot:
 
     def distanceCalculator(self,itemCode):
         return self.dist2item(itemCode) + self.dist2exit(itemCode)
+    
+    def deliver(self,itemCode):
+        if itemDict[itemCode].stock < 1:
+            print("Stock depleted")
+        else:
+            self.avail = False
+            itemLoc = itemDict[itemCode].location
+            exitPt = itemDict[itemCode].deliveryPt
+            deliveryLoc = pointLocations[exitPt].location
+            exitLoc = deliveryLoc
+            self.move2location(itemLoc)
+            itemDict[itemCode].removeStock()
+            self.move2location(exitLoc)
+            self.avail = True
+        
+        
+    def move2location(self,location):
+        dist = displacement(self.pos,location)
+        walkTime = dist/robotSpeed
+        print(round(dist),round(walkTime))
+        time.sleep(5)
+        #time.sleep(round(walkTime/100))
+        self.pos = location
+
 robotCount = 3
 
 robotList = [ Robot(i) for i in range(robotCount)]
@@ -149,18 +155,34 @@ def closestRobotFinder(itemCode):
                 closestDist = dist
                 closestIndex = i
     return [closestIndex, closestDist]
-
+'''
 def closestRobotFinderPrint(itemCode):
     robotIndex, dist = closestRobotFinder(itemCode)
+    robotList[robotIndex].deliver(itemCode)
     print("Product Retrieved: {}".format(itemDict[itemCode].name))
     print("Robot Engaged: {}".format(robotList[robotIndex].name))
     print("Distance Covered: {}meters".format(dist))
     print("Time Taken: {}seconds".format(round(dist/robotSpeed,2)))
     print("*********************************")
+'''
 
+printLock = threading.Lock()
+
+def queStuffJob(que):
+    while True:
+        itemCode = que.get()
+        doJob(itemCode)
+        que.task_done()
+
+def doJob(itemCode):
+    robotIndex, dist = closestRobotFinder(itemCode)
+    with printLock:
+        print(robotList[robotIndex].name,itemDict[itemCode].name)
+    robotList[robotIndex].deliver(itemCode)
 
 itemDict = readExcel()
+if __name__ == "__main__":
+    for i in range(robotCount):
+        thrd = threading.Thread(target=queStuffJob,args=(q,))
+        thrd.start()
 
-if __name__ == '__main__':
-    toExcel(itemDict)
-    printAll(itemDict)
