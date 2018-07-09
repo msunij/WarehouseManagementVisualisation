@@ -43,7 +43,7 @@ def readExcel():
         
     D = dict()
     #fileName = input("Enter the name of the excel file: ")
-    fileName = 'warehouseData.xlsx'
+    fileName = 'miniWarehouseData.xlsx'
     workbook = openpyxl.load_workbook(fileName, data_only=True)
     sheet = workbook.active
     for i in range(2,sheet.max_row+1):
@@ -81,6 +81,7 @@ class Robot:
         self.pos = pointLocations[robotNumber].location #Assigning corresponding robot to points
         self.avail = True
         self.name = 'Robot'+str(robotNumber+1)
+        self.stepNumber = 2
     
     #find the total distance robot has to travel to deliver the product
     #argument is a list of product code and delivery location
@@ -104,20 +105,34 @@ class Robot:
             deliveryLoc = pointLocations[exitPt].location
             exitLoc = deliveryLoc
             self.move2location(itemLoc)
+            print("item location reached")
+            print("item location:{}".format(itemLoc))
             itemDict[itemCode].removeStock()
             self.move2location(exitLoc)
+            print("deliveryPt:{}".format(exitLoc))
             self.avail = True
         
         
     def move2location(self,location):
         dist = displacement(self.pos,location)
         walkTime = dist/robotSpeed
-        print(round(dist),round(walkTime))
-        time.sleep(5)
+        #print(round(dist),round(walkTime))
+        #time.sleep(5)
         #time.sleep(round(walkTime/100))
-        self.pos = location
+        deltaX = location[0] - self.pos[0]
+        deltaY = location[1] - self.pos[1]
+        x = deltaX/self.stepNumber
+        y = deltaY/self.stepNumber
+        print("step",x,y)
+        while not self.pos[0]==location[0]:
+            print(not self.pos[0]==location[0])
+            self.pos[0] += x
+            self.pos[1] += y
+            print(self.pos)
+            time.sleep(2)
 
-robotCount = 3
+#        self.pos = location
+robotCount = 2
 
 robotList = [ Robot(i) for i in range(robotCount)]
 
@@ -155,23 +170,25 @@ def closestRobotFinder(itemCode):
                 closestDist = dist
                 closestIndex = i
     return [closestIndex, closestDist]
-'''
+
 def closestRobotFinderPrint(itemCode):
-    robotIndex, dist = closestRobotFinder(itemCode)
-    robotList[robotIndex].deliver(itemCode)
-    print("Product Retrieved: {}".format(itemDict[itemCode].name))
-    print("Robot Engaged: {}".format(robotList[robotIndex].name))
-    print("Distance Covered: {}meters".format(dist))
-    print("Time Taken: {}seconds".format(round(dist/robotSpeed,2)))
+    with printLock:
+        robotIndex, dist = closestRobotFinder(itemCode)
+        #print("Product Retrieved: {}".format(itemCode))
+        print("Robot Engaged: {}".format(robotList[robotIndex].name))
+        print("from:{} item:{} final:{}".format(robotList[robotIndex].pos,itemDict[itemCode].location,pointLocations[itemDict[itemCode].deliveryPt].location))
+        robotList[robotIndex].deliver(itemCode)
+    #print("Distance Covered: {}meters".format(dist))
+    #print("Time Taken: {}seconds".format(round(dist/robotSpeed,2)))
     print("*********************************")
-'''
+
 
 printLock = threading.Lock()
 
 def queStuffJob(que):
     while True:
         itemCode = que.get()
-        doJob(itemCode)
+        closestRobotFinderPrint(itemCode)
         que.task_done()
 
 def doJob(itemCode):
@@ -184,5 +201,7 @@ itemDict = readExcel()
 if __name__ == "__main__":
     for i in range(robotCount):
         thrd = threading.Thread(target=queStuffJob,args=(q,))
+        thrd.daemon = True
         thrd.start()
 
+    printAll(itemDict)
