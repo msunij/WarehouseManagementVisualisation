@@ -28,7 +28,7 @@ def distance(pos1, pos2):
     return dist
 
 def displacement(pos1, pos2):
-    return hypot(pos1[0]-pos2[1],pos1[1]-pos2[1])
+    return hypot(pos1[0]-pos2[0],pos1[1]-pos2[1])
 
 #scaling function
 def scale(num):

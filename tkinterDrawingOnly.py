@@ -30,10 +30,15 @@ class App(Frame):
         self.canvas.pack()
         self.drawStructures()
         self.updatePosition()
-        
+        #self.parent.bind('<Motion>', self.motion)
+
+    def motion(self,event):
+        x, y = event.x, event.y
+        print('{}, {}'.format(x, y))
+    
     def updatePosition(self):
         self.canvas.delete("robot")
-        locs = [ i.pos for i in warehouse.robotList]
+        locs = [ i.pos for i in warehouse.robotList ]
         self.drawAllRobots(locs)
         self.parent.after(10, self.updatePosition)
         
@@ -47,7 +52,7 @@ class App(Frame):
         a,b,c,d = rectBound(coord,radiusRobot)
         robotIcon = self.canvas.create_oval(a,b,c,d,fill='black',tags=("robot"))
         robotText = self.canvas.create_text(coord[0],coord[1],text=str(robotNumber),fill='white',tags="robot")
-    
+        robotPos = self.canvas.create_text(coord[0],coord[1]-20,text=self.canvas.coords(robotText),tags='robot')
    
     def drawStructures(self):
         floor = self.canvas.create_rectangle(X1,Y1,X2,Y2,fill="lightblue")
@@ -68,6 +73,6 @@ if __name__ == "__main__":
     root = Tk()
     root.title("Intelligent Warehousing Simulation")
     gui = App(root)
-    warehouse.main()
-
+    root.after(1000,warehouse.main)
+    gui.updatePosition()
     root.mainloop()

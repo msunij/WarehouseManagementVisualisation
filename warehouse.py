@@ -11,7 +11,8 @@ from utils import *
 import time
 import queue
 import threading
-
+import copy
+from bresenham import bresenham
 
 
         
@@ -43,7 +44,7 @@ def readExcel():
         
     D = dict()
     #fileName = input("Enter the name of the excel file: ")
-    fileName = 'miniWarehouseData.xlsx'
+    fileName = 'warehouseData.xlsx'
     workbook = openpyxl.load_workbook(fileName, data_only=True)
     sheet = workbook.active
     for i in range(2,sheet.max_row+1):
@@ -66,23 +67,24 @@ class ExitPoint:
         self.location = scale(location)
         
         
-pointCount = 4
 pointLocations = []
 for i in range(sideage, sideage+cols):
     if i%2 == 1:
         pointLocations.append(ExitPoint([i, 0]))
+        #print(scale([i,0]))
     else:
         pointLocations.append(ExitPoint([i, warehouseHeight]))
-
+        #print(scale([i,warehouseHeight]))
 
 
 #Creating the robot class
 class Robot:
     def __init__(self, robotNumber):
-        self.pos = pointLocations[robotNumber].location #Assigning corresponding robot to points
+        self.pos = copy.deepcopy(pointLocations[robotNumber].location) #Assigning corresponding robot to points
+        #print(id(self.pos),id(pointLocations[robotNumber].location))
         self.avail = True
         self.name = 'Robot'+str(robotNumber+1)
-        self.speed = 1#number of pixels per second
+        self.speed = 3#number of pixels per second
     
     #find the total distance robot has to travel to deliver the product
     #argument is a list of product code and delivery location
@@ -103,37 +105,32 @@ class Robot:
             self.avail = False
             itemLoc = itemDict[itemCode].location
             exitPt = itemDict[itemCode].deliveryPt
+            #print("exitPt:",exitPt)
             deliveryLoc = pointLocations[exitPt].location
-            exitLoc = deliveryLoc
+            #print("deliveryLocation:",deliveryLoc)
             self.move2location(itemLoc)
             #print("item location reached")
             #print("item location:{}".format(itemLoc))
+            time.sleep(1)
             itemDict[itemCode].removeStock()
-            self.move2location(exitLoc)
+            self.move2location(deliveryLoc)
             #print("deliveryPt:{}".format(exitLoc))
+            time.sleep(1)
             self.avail = True
         
         
     def move2location(self,location):
-        disp = displacement(self.pos,location)
-        walkTime = disp/robotSpeed
-        #print(round(dist),round(walkTime))
-        #time.sleep(5)
-        #time.sleep(round(walkTime/100))
-        deltaX = location[0] - self.pos[0]
-        deltaY = location[1] - self.pos[1]
-        x = round(deltaX * self.speed / disp)
-        y = round(deltaY * self.speed /disp)
-        print("step",x,y)
-        while abs(self.pos[0]-location[0]) > 1 and abs(self.pos[1]-location[1])>1:
+        bresenhamGenerator = bresenham(self.pos[0],self.pos[1],location[0],location[1])
+        x,y = next(bresenhamGenerator)
+        while not self.pos == location :    
             #print(not self.pos[0]==location[0])
-            self.pos[0] += x
-            self.pos[1] += y
-            print(self.pos)
-            time.sleep(.001)
+            #print(displacement(self.pos,location))
+            x,y = next(bresenhamGenerator)
+            self.pos[0] = x
+            self.pos[1] = y
+            time.sleep(0.01)
 
-        self.pos = location
-robotCount = 2
+robotCount = 3
 
 robotList = [ Robot(i) for i in range(robotCount)]
 
@@ -176,19 +173,18 @@ def closestRobotFinderPrint(itemCode):
     with printLock:
         robotIndex, dist = closestRobotFinder(itemCode)
         #print("Product Retrieved: {}".format(itemCode))
-        print("Robot Engaged: {}".format(robotList[robotIndex].name))
-        print("from:{} item:{} final:{}".format(robotList[robotIndex].pos,itemDict[itemCode].location,pointLocations[itemDict[itemCode].deliveryPt].location))
-        robotList[robotIndex].deliver(itemCode)
+        #print("Robot Engaged: {}".format(robotList[robotIndex].name))
+        #print("from:{} item:{} final:{}".format(robotList[robotIndex].pos,itemDict[itemCode].location,pointLocations[itemDict[itemCode].deliveryPt].location))
+        #robotList[robotIndex].deliver(itemCode)
     #print("Distance Covered: {}meters".format(dist))
     #print("Time Taken: {}seconds".format(round(dist/robotSpeed,2)))
     print("*********************************")
 
 def startWork(itemCode):
+    #closestRobotFinderPrint(itemCode)
     robotIndex, dist = closestRobotFinder(itemCode)
     robotList[robotIndex].deliver(itemCode)
-#    with printLock:
-#        print("delivered item"+str(itemCode)+"by"+robotList[robotIndex].name)
-    
+   
     
 printLock = threading.Lock()
 
@@ -210,7 +206,7 @@ def main():
 #        print(robotList[i].name,robotList[i].pos)
 #        time.sleep(1)
 #        
-    #printAll(itemDict)
+#printAll(itemDict)
     
 if __name__ == "__main__":
     main()
