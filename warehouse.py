@@ -56,6 +56,7 @@ def readExcel():
         
         D[code] = Item(name,scale([x,y]),stock,deliveryPt)
         q.put(code)
+        
     return D
     
   
@@ -81,7 +82,7 @@ class Robot:
         self.pos = pointLocations[robotNumber].location #Assigning corresponding robot to points
         self.avail = True
         self.name = 'Robot'+str(robotNumber+1)
-        self.stepNumber = 2
+        self.speed = 1#number of pixels per second
     
     #find the total distance robot has to travel to deliver the product
     #argument is a list of product code and delivery location
@@ -105,33 +106,33 @@ class Robot:
             deliveryLoc = pointLocations[exitPt].location
             exitLoc = deliveryLoc
             self.move2location(itemLoc)
-            print("item location reached")
-            print("item location:{}".format(itemLoc))
+            #print("item location reached")
+            #print("item location:{}".format(itemLoc))
             itemDict[itemCode].removeStock()
             self.move2location(exitLoc)
-            print("deliveryPt:{}".format(exitLoc))
+            #print("deliveryPt:{}".format(exitLoc))
             self.avail = True
         
         
     def move2location(self,location):
-        dist = displacement(self.pos,location)
-        walkTime = dist/robotSpeed
+        disp = displacement(self.pos,location)
+        walkTime = disp/robotSpeed
         #print(round(dist),round(walkTime))
         #time.sleep(5)
         #time.sleep(round(walkTime/100))
         deltaX = location[0] - self.pos[0]
         deltaY = location[1] - self.pos[1]
-        x = deltaX/self.stepNumber
-        y = deltaY/self.stepNumber
+        x = round(deltaX * self.speed / disp)
+        y = round(deltaY * self.speed /disp)
         print("step",x,y)
-        while not self.pos[0]==location[0]:
-            print(not self.pos[0]==location[0])
+        while abs(self.pos[0]-location[0]) > 1 and abs(self.pos[1]-location[1])>1:
+            #print(not self.pos[0]==location[0])
             self.pos[0] += x
             self.pos[1] += y
             print(self.pos)
-            time.sleep(2)
+            time.sleep(.001)
 
-#        self.pos = location
+        self.pos = location
 robotCount = 2
 
 robotList = [ Robot(i) for i in range(robotCount)]
@@ -182,26 +183,34 @@ def closestRobotFinderPrint(itemCode):
     #print("Time Taken: {}seconds".format(round(dist/robotSpeed,2)))
     print("*********************************")
 
-
+def startWork(itemCode):
+    robotIndex, dist = closestRobotFinder(itemCode)
+    robotList[robotIndex].deliver(itemCode)
+#    with printLock:
+#        print("delivered item"+str(itemCode)+"by"+robotList[robotIndex].name)
+    
+    
 printLock = threading.Lock()
 
 def queStuffJob(que):
     while True:
         itemCode = que.get()
-        closestRobotFinderPrint(itemCode)
+        startWork(itemCode)
         que.task_done()
 
-def doJob(itemCode):
-    robotIndex, dist = closestRobotFinder(itemCode)
-    with printLock:
-        print(robotList[robotIndex].name,itemDict[itemCode].name)
-    robotList[robotIndex].deliver(itemCode)
-
 itemDict = readExcel()
-if __name__ == "__main__":
+
+def main():
     for i in range(robotCount):
         thrd = threading.Thread(target=queStuffJob,args=(q,))
         thrd.daemon = True
         thrd.start()
-
-    printAll(itemDict)
+#    i = 0
+#    while True:
+#        print(robotList[i].name,robotList[i].pos)
+#        time.sleep(1)
+#        
+    #printAll(itemDict)
+    
+if __name__ == "__main__":
+    main()
