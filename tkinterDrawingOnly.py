@@ -31,14 +31,17 @@ class App(Frame):
         self.drawStructures()
         self.updatePosition()
         #self.parent.bind('<Motion>', self.motion)
+        
+    def testDraw(self):
+        self.canvas.create_oval(50,50,100,100,fill='red')
 
-    def motion(self,event):
-        x, y = event.x, event.y
-        print('{}, {}'.format(x, y))
+#    def motion(self,event):
+#        x, y = event.x, event.y
+#        print('{}, {}'.format(x, y))
     
     def updatePosition(self):
         self.canvas.delete("robot")
-        locs = [ i.pos for i in warehouse.robotList ]
+        locs = [ robot.pos for robot in warehouse.robotList ]
         self.drawAllRobots(locs)
         self.parent.after(10, self.updatePosition)
         
@@ -50,10 +53,15 @@ class App(Frame):
         robotNumber = nameNpos[0]
         coord = nameNpos[1]
         a,b,c,d = rectBound(coord,radiusRobot)
+#        if coord in [item.location for item in warehouse.itemDict.values()]:
+#            self.blink(a,b,c,d)
         robotIcon = self.canvas.create_oval(a,b,c,d,fill='black',tags=("robot"))
         robotText = self.canvas.create_text(coord[0],coord[1],text=str(robotNumber),fill='white',tags="robot")
         robotPos = self.canvas.create_text(coord[0],coord[1]-20,text=self.canvas.coords(robotText),tags='robot')
    
+#    def blink(self,a,b,c,d):
+#        self.canvas.create_rectangle(a,b,c,d,fill='green')
+    
     def drawStructures(self):
         floor = self.canvas.create_rectangle(X1,Y1,X2,Y2,fill="lightblue")
         #draw delivery points
@@ -73,6 +81,6 @@ if __name__ == "__main__":
     root = Tk()
     root.title("Intelligent Warehousing Simulation")
     gui = App(root)
-    root.after(1000,warehouse.main)
+    gui.after(1000,warehouse.main)
     gui.updatePosition()
     root.mainloop()

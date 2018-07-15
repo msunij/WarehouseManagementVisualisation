@@ -13,8 +13,7 @@ import queue
 import threading
 import copy
 from bresenham import bresenham
-
-
+from random import choice
         
 robotSpeed = 2
 
@@ -39,7 +38,7 @@ class Item:
     def removeStock(self,quantity=1):
         self.stock -= quantity
 
-q = queue.Queue(maxsize=0)
+itemQ = queue.Queue(maxsize=0)
 def readExcel():
         
     D = dict()
@@ -56,7 +55,7 @@ def readExcel():
         deliveryPt = sheet.cell(row=i, column=7).value
         
         D[code] = Item(name,scale([x,y]),stock,deliveryPt)
-        q.put(code)
+        itemQ.put(code)
         
     return D
     
@@ -130,9 +129,6 @@ class Robot:
             self.pos[1] = y
             time.sleep(0.01)
 
-robotCount = 3
-
-robotList = [ Robot(i) for i in range(robotCount)]
 
 def toExcel(inputDict):
     wb = openpyxl.Workbook()
@@ -181,32 +177,37 @@ def closestRobotFinderPrint(itemCode):
     print("*********************************")
 
 def startWork(itemCode):
-    #closestRobotFinderPrint(itemCode)
     robotIndex, dist = closestRobotFinder(itemCode)
     robotList[robotIndex].deliver(itemCode)
    
     
-printLock = threading.Lock()
-
-def queStuffJob(que):
-    while True:
-        itemCode = que.get()
-        startWork(itemCode)
-        que.task_done()
+class WorkThread(threading.Thread):
+    def __init__(self,que):
+        super().__init__()
+        self.que = que
+        
+    def run(self):
+        timer = [i for i in range(1,15)]
+        while True:
+            wait = choice(timer)
+            itemCode = self.que.get()
+            time.sleep(wait)
+            #print(wait)
+            startWork(itemCode)
+            self.que.task_done()
 
 itemDict = readExcel()
 
 def main():
     for i in range(robotCount):
-        thrd = threading.Thread(target=queStuffJob,args=(q,))
+        thrd = WorkThread(itemQ)
         thrd.daemon = True
         thrd.start()
-#    i = 0
-#    while True:
-#        print(robotList[i].name,robotList[i].pos)
-#        time.sleep(1)
-#        
-#printAll(itemDict)
-    
+
+
+robotCount = 4
+
+robotList = [ Robot(i) for i in range(robotCount)]
+
 if __name__ == "__main__":
     main()
