@@ -198,6 +198,8 @@ class WorkThread(threading.Thread):
 
 itemDict = readExcel()
 
+#testing git 
+
 def main():
     for i in range(robotCount):
         thrd = WorkThread(itemQ)
